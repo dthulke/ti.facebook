@@ -480,6 +480,44 @@ NSTimeInterval meRequestTimeout = 180.0;
                                       }];
     }, NO);
 }
+
+-(void)presentPhotoShareDialog:(id)args
+{
+    id params = [args objectAtIndex:0];
+    ENSURE_SINGLE_ARG(params, NSDictionary);
+    
+    TiThreadPerformOnMainThread(^{
+        FBShareDialogPhotoParams *photoParams = [FBShareDialogPhotoParams new];
+        
+        UIImage *screenshot = [(TiBlob *)[params objectForKey:@"imageBlob"] image];
+        photoParams.photos = @[screenshot];
+        
+        [FBDialogs presentShareDialogWithPhotoParams:photoParams
+                                         clientState:nil
+                                             handler:^(FBAppCall *call, NSDictionary *results, NSError *error) {
+                                                 BOOL success = NO;
+                                                 BOOL cancelled = NO;
+                                                 NSString *errorDescription = @"";
+                                                 if (error) {
+                                                     errorDescription = [FBErrorUtility userMessageForError:error];
+                                                 } else {
+                                                     success = YES;
+                                                     cancelled = NO;
+                                                     if ([results objectForKey:@"didComplete"] && [[results objectForKey:@"completionGesture"] isEqualToString:@"cancel"]) {
+                                                         cancelled = YES;
+                                                         success = NO;
+                                                     }
+                                                     
+                                                 }
+                                                 NSMutableDictionary *event = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+                                                                               NUMBOOL(cancelled),@"cancelled",
+                                                                               NUMBOOL(success),@"success",
+                                                                               [error description], @"error", nil];
+                                                 [self fireEvent:@"shareCompleted" withObject:event];
+                                             }];
+    }, NO);
+}
+
 //presents share dialog using web dialog. Useful for devices with no facebook app installed.
 -(void)presentWebShareDialog:(id)args
 {

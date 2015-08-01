@@ -13,6 +13,7 @@
 package facebook;
 
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -25,10 +26,13 @@ import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.annotations.Kroll;
 import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
+import org.appcelerator.titanium.TiBlob;
+import org.appcelerator.titanium.view.TiDrawableReference;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -528,6 +532,27 @@ public class TiFacebookModule extends KrollModule
 			}
 			
 		}
+		if (shareDialog != null && uiLifecycleHelper != null) {
+			uiLifecycleHelper.trackPendingDialogCall(shareDialog.present());
+		} else if (shareDialog != null) {
+			shareDialog.present();
+		}
+	}
+	
+	@Kroll.method
+	public void presentPhotoShareDialog(@Kroll.argument(optional = true) final KrollDict args)
+	{
+		Activity currentActivity = TiApplication.getInstance().getCurrentActivity();
+		TiBlob blob = (TiBlob) args.get("imageBlob");
+		TiDrawableReference ref = TiDrawableReference.fromBlob(currentActivity, blob);
+		Bitmap bitmap = ref.getBitmap(); 
+		List<Bitmap> images = new ArrayList<Bitmap>();
+		images.add(bitmap);
+
+		FacebookDialog shareDialog = new FacebookDialog.PhotoShareDialogBuilder(currentActivity)
+				.addPhotos(images)
+				.build();
+
 		if (shareDialog != null && uiLifecycleHelper != null) {
 			uiLifecycleHelper.trackPendingDialogCall(shareDialog.present());
 		} else if (shareDialog != null) {
